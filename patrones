@@ -1,0 +1,108 @@
+from abc import ABC, abstractmethod
+
+# ================== PATRÓN STRATEGY ==================
+class PaymentStrategy(ABC):
+    @abstractmethod
+    def pay(self, amount):
+        pass
+
+
+class CreditCardPayment(PaymentStrategy):
+    def pay(self, amount):
+        print(f"Pagando ${amount} con Tarjeta de Crédito")
+
+
+class PayPalPayment(PaymentStrategy):
+    def pay(self, amount):
+        print(f"Pagando ${amount} usando PayPal")
+
+
+class CryptoPayment(PaymentStrategy):
+    def pay(self, amount):
+        print(f"Pagando ${amount} con Criptomoneda")
+
+
+# ================== PATRÓN OBSERVER ==================
+class PaymentObserver(ABC):
+    @abstractmethod
+    def on_payment_success(self, amount):
+        pass
+
+
+class LoggerObserver(PaymentObserver):
+    def on_payment_success(self, amount):
+        print(f"[LOG] Pago registrado: ${amount}")
+
+
+class StatsObserver(PaymentObserver):
+    def on_payment_success(self, amount):
+        print("[STATS] Se ha incrementado el contador de pagos.")
+
+
+# ================== PATRÓN TEMPLATE METHOD ==================
+class PaymentProcessor(ABC):
+    def __init__(self):
+        self._observers = []
+
+    def add_observer(self, observer):
+        self._observers.append(observer)
+
+    def process_payment(self, amount):
+        self.validate(amount)
+        self.execute_payment(amount)
+        self.notify_observers(amount)
+
+    @abstractmethod
+    def validate(self, amount):
+        pass
+
+    @abstractmethod
+    def execute_payment(self, amount):
+        pass
+
+    def notify_observers(self, amount):
+        for obs in self._observers:
+            obs.on_payment_success(amount)
+
+
+# Implementación concreta que usa Strategy
+class OnlinePaymentProcessor(PaymentProcessor):
+    def __init__(self, strategy: PaymentStrategy):
+        super().__init__()
+        self._strategy = strategy
+
+    def validate(self, amount):
+        if amount <= 0:
+            raise ValueError("Monto inválido")
+        print(f"Validando pago de ${amount}")
+
+    def execute_payment(self, amount):
+        self._strategy.pay(amount)
+
+
+# ================== MAIN ==================
+if __name__ == "__main__":
+    # Estrategias disponibles
+    tarjeta = CreditCardPayment()
+    paypal = PayPalPayment()
+    crypto = CryptoPayment()
+
+    # Observadores
+    log = LoggerObserver()
+    stats = StatsObserver()
+
+    # Procesador con Template Method + Strategy
+    processor = OnlinePaymentProcessor(paypal)
+    processor.add_observer(log)
+    processor.add_observer(stats)
+
+    processor.process_payment(150.00)
+
+    print("\n--- Cambiando estrategia a Criptomoneda ---\n")
+
+    # Cambiar la estrategia (STRATEGY)
+    processor2 = OnlinePaymentProcessor(crypto)
+    processor2.add_observer(log)
+    processor2.add_observer(stats)
+    processor2.process_payment(300.00)
+
